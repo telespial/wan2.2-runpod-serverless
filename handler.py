@@ -1,11 +1,13 @@
 import base64
+import io
 import os
 import subprocess
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import runpod
 from huggingface_hub import snapshot_download
+from PIL import Image
 
 WAN_REPO_DIR = os.environ.get("WAN_REPO_DIR", "/workspace/Wan2.2")
 WAN_CKPT_DIR = os.environ.get("WAN_CKPT_DIR", "/models/Wan2.2-S2V-14B")
@@ -22,6 +24,26 @@ WAN_EXTRA_ARGS = os.environ.get("WAN_EXTRA_ARGS", "")
 def _write_b64_to_file(b64_str: str, path: str) -> None:
     with open(path, "wb") as f:
         f.write(base64.b64decode(b64_str))
+
+
+def _parse_size(size: str) -> Tuple[int, int]:
+    if "*" in size:
+        w, h = size.split("*", 1)
+    elif "x" in size.lower():
+        w, h = size.lower().split("x", 1)
+    else:
+        raise ValueError(f"Invalid size format: {size}")
+    return int(w.strip()), int(h.strip())
+
+
+def _write_resized_image(b64_str: str, path: str, size: str) -> None:
+    raw = base64.b64decode(b64_str)
+    with Image.open(io.BytesIO(raw)) as img:
+        img = img.convert("RGB")
+        target_w, target_h = _parse_size(size)
+        if img.size != (target_w, target_h):
+            img = img.resize((target_w, target_h), Image.LANCZOS)
+        img.save(path, format="PNG")
 
 
 def _strip_data_uri(value: str) -> str:
@@ -83,7 +105,7 @@ def handler(job: Dict[str, Any]) -> Dict[str, Any]:
     image_path = os.path.join(input_dir, "input_image.png")
 
     _write_b64_to_file(audio_b64, audio_path)
-    _write_b64_to_file(image_b64, image_path)
+    _write_resized_image(image_b64, image_path, size)
 
     _ensure_model()
 
