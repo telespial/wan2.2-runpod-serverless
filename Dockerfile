@@ -6,7 +6,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     HF_HOME=/models/hf \
     WAN_CKPT_DIR=/models/Wan2.2-S2V-14B \
     WAN_OUTPUT_DIR=/outputs \
-    
     CUDA_HOME=/usr/local/cuda
 
 RUN apt-get update \
@@ -29,4 +28,4 @@ COPY handler.py /app/handler.py
 
 ENV RUNPOD_HANDLER_MODULE=handler
 
-CMD ["python", "-m", "runpod"]
+CMD ["python", "-m", "runpod.serverless"]
