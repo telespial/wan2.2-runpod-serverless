@@ -28,4 +28,4 @@ COPY handler.py /app/handler.py
 
 ENV RUNPOD_HANDLER_MODULE=handler
 
-CMD ["python", "-m", "runpod.serverless"]
+CMD ["python", "-m", "runpod.serverless.worker"]
